@@ -113,7 +113,6 @@
 </head>
 <body>
 
-<!-- MODAL API KEY -->
 <div class="modal-overlay" id="api-modal">
   <div class="modal-box">
     <div class="modal-icon">🔑</div>
@@ -125,7 +124,6 @@
   </div>
 </div>
 
-<!-- NAV -->
 <nav>
   <div class="nav-logo">
     <div class="logo-icon">🧠</div>
@@ -137,14 +135,12 @@
   </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-chip">✨ IA que resolve qualquer questão</div>
   <h1>Tire uma foto,<br><span class="underline">receba a solução</span></h1>
   <p class="hero-sub">Matemática, física, química, português e muito mais. Resolução passo a passo com explicações detalhadas.</p>
 </section>
 
-<!-- APP -->
 <div class="app-card">
   <div class="tabs">
     <button class="tab active" id="tab-photo" onclick="switchTab('photo')">📷 Foto / Imagem</button>
@@ -174,7 +170,7 @@
   </div>
 
   <div class="text-input-wrap" id="text-mode">
-    <textarea class="problem-textarea" id="problem-text" placeholder="Digite ou cole a questão aqui...&#10;&#10;Exemplo: Calcule a integral de x² + 3x - 2 dx&#10;&#10;Pode ser qualquer tipo de problema: matemática, física, química, português, história..."></textarea>
+    <textarea class="problem-textarea" id="problem-text" placeholder="Digite ou cole a questão aqui...&#10;&#10;Exemplo: Calcule a integral de x² + 3x - 2 dx"></textarea>
   </div>
 
   <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
@@ -231,14 +227,12 @@
   </div>
 </div>
 
-<!-- FEATURES -->
 <div class="features">
   <div class="feat-card"><div class="feat-icon">📷</div><div class="feat-title">Foto ou câmera</div><div class="feat-desc">Tire uma foto da questão ou faça upload. Reconhece texto manuscrito e impresso.</div></div>
   <div class="feat-card"><div class="feat-icon">🔢</div><div class="feat-title">Passo a passo</div><div class="feat-desc">Não só a resposta — explicações detalhadas de cada etapa para você realmente aprender.</div></div>
   <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Todas as matérias</div><div class="feat-desc">Matemática, física, química, português, história, geografia, biologia, inglês e programação.</div></div>
 </div>
 
-<!-- HISTÓRICO -->
 <div class="history-section" id="history-section">
   <div class="section-label">Histórico recente</div>
   <div class="history-list" id="history-list"></div>
@@ -270,10 +264,8 @@
     currentMode = mode;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + mode).classList.add('active');
-    const uploadZone = document.getElementById('upload-zone');
-    const textMode = document.getElementById('text-mode');
-    if (mode === 'photo') { uploadZone.style.display = 'block'; textMode.classList.remove('visible'); }
-    else if (mode === 'text') { uploadZone.style.display = 'none'; textMode.classList.add('visible'); }
+    if (mode === 'photo') { document.getElementById('upload-zone').style.display='block'; document.getElementById('text-mode').classList.remove('visible'); }
+    else if (mode === 'text') { document.getElementById('upload-zone').style.display='none'; document.getElementById('text-mode').classList.add('visible'); }
   }
 
   function openCamera() {
@@ -285,10 +277,10 @@
     document.getElementById('tab-photo').classList.add('active');
   }
 
-  function handleFileSelect(event) { const file = event.target.files[0]; if (!file) return; loadImage(file); }
-  function handleDragOver(event) { event.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
-  function handleDragLeave(event) { document.getElementById('upload-zone').classList.remove('drag-over'); }
-  function handleDrop(event) { event.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over'); const file = event.dataTransfer.files[0]; if (file && file.type.startsWith('image/')) loadImage(file); }
+  function handleFileSelect(e) { const f = e.target.files[0]; if(f) loadImage(f); }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+  function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('drag-over'); }
+  function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) loadImage(f); }
 
   function loadImage(file) {
     const reader = new FileReader();
@@ -305,8 +297,8 @@
     reader.readAsDataURL(file);
   }
 
-  function removeImage(event) {
-    event.stopPropagation(); currentImage = null;
+  function removeImage(e) {
+    e.stopPropagation(); currentImage = null;
     document.getElementById('preview-img').style.display = 'none';
     document.getElementById('preview-img').src = '';
     document.getElementById('upload-placeholder').style.display = 'block';
@@ -326,51 +318,47 @@
     if (currentMode === 'text' && !textProblem) return showToast('Digite a questão primeiro.');
     setLoading(true);
     document.getElementById('result-area').classList.remove('visible');
+
     const subjectMap = { auto:'Detectar automaticamente', matematica:'Matemática', fisica:'Física', quimica:'Química', portugues:'Português', historia:'História', geografia:'Geografia', biologia:'Biologia', ingles:'Inglês', programacao:'Programação' };
     const levelMap = { fundamental:'Ensino Fundamental', medio:'Ensino Médio', superior:'Ensino Superior', concurso:'Concurso/ENEM' };
-    const systemPrompt = `Você é o SolveAI, um assistente educacional brasileiro especialista em resolver questões escolares e universitárias.
-Seu objetivo é:
-1. Identificar a matéria da questão
-2. Resolver completamente passo a passo
-3. Dar uma explicação clara de cada etapa
-4. Apresentar a resposta final de forma destacada
 
-Formato da resposta:
+    const systemPrompt = `Você é o SolveAI, um assistente educacional brasileiro especialista em resolver questões escolares e universitárias.
+Resolva completamente passo a passo e apresente:
 📚 MATÉRIA: [nome]
 📊 NÍVEL: [nível]
-
-📋 ENTENDENDO A QUESTÃO:
-[Explique o que está sendo pedido]
-
-🔢 RESOLUÇÃO PASSO A PASSO:
-Passo 1: [título]
-[explicação]
-Passo 2: [título]
-[explicação]
-
-✅ RESPOSTA FINAL:
-[resposta clara]
-
-💡 DICA:
-[dica importante]
-
+📋 ENTENDENDO A QUESTÃO: [explicação]
+🔢 RESOLUÇÃO PASSO A PASSO: [passos detalhados]
+✅ RESPOSTA FINAL: [resposta clara]
+💡 DICA: [dica importante]
 Nível: ${levelMap[level]} | Matéria: ${subjectMap[subject]}
 Responda sempre em português brasileiro. Seja claro e didático.`;
+
     try {
       const messages = [];
       if (currentImage) {
-        messages.push({ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:currentImage.type, data:currentImage.data }},{ type:'text', text:'Resolva a questão que aparece nesta imagem.' + (textProblem ? ' Contexto: ' + textProblem : '') }]});
+        messages.push({ role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type:currentImage.type, data:currentImage.data }},
+          { type:'text', text:'Resolva a questão desta imagem.' + (textProblem ? ' Contexto: '+textProblem : '') }
+        ]});
       } else {
         messages.push({ role:'user', content: textProblem });
       }
+
       const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01' },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:2000, system:systemPrompt, messages })
       });
+
       if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || 'Erro na API'); }
       const data = await res.json();
       resultText = data.content[0].text;
+
       const now = new Date();
       document.getElementById('result-subject').textContent = subjectMap[subject] || 'Detectado';
       document.getElementById('result-time').textContent = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -378,6 +366,7 @@ Responda sempre em português brasileiro. Seja claro e didático.`;
       document.getElementById('result-area').classList.add('visible');
       document.getElementById('result-area').scrollIntoView({ behavior:'smooth', block:'start' });
       saveToHistory(textProblem || 'Questão por imagem', resultText, subject, subjectMap);
+
     } catch(err) {
       showToast('Erro: ' + err.message);
     } finally {
@@ -386,10 +375,9 @@ Responda sempre em português brasileiro. Seja claro e didático.`;
   }
 
   function setLoading(state) {
-    const btn = document.getElementById('solve-btn');
+    document.getElementById('solve-btn').disabled = state;
     document.getElementById('btn-spinner').style.display = state ? 'block' : 'none';
     document.getElementById('btn-text').textContent = state ? 'Resolvendo...' : '🧠 Resolver questão';
-    btn.disabled = state;
   }
 
   function saveToHistory(question, answer, subject, subjectMap) {
@@ -407,7 +395,7 @@ Responda sempre em português brasileiro. Seja claro e didático.`;
     section.classList.add('has-items');
     list.innerHTML = history.map(item => `
       <div class="history-item" onclick="showHistoryItem(${item.id})">
-        <div class="history-thumb">${item.thumb ? `<img src="${item.thumb}" alt="">` : (item.hasImage ? '🖼️' : '📝')}</div>
+        <div class="history-thumb">${item.thumb?`<img src="${item.thumb}" alt="">`:(item.hasImage?'🖼️':'📝')}</div>
         <div class="history-info"><div class="history-q">${item.question||'Questão por imagem'}</div><div class="history-meta">${item.time}</div></div>
         <span class="history-subject">${item.subject}</span>
       </div>`).join('');
@@ -424,9 +412,8 @@ Responda sempre em português brasileiro. Seja claro e didático.`;
   }
 
   function copyResult() { navigator.clipboard.writeText(resultText).then(()=>showToast('Copiado!')).catch(()=>showToast('Erro ao copiar')); }
-  function clearResult() { document.getElementById('result-area').classList.remove('visible'); resultText = ''; }
+  function clearResult() { document.getElementById('result-area').classList.remove('visible'); resultText=''; }
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
-
   document.getElementById('problem-text').addEventListener('keydown', e => { if(e.key==='Enter'&&e.ctrlKey) solveQuestion(); });
 </script>
 </body>
