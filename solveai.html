@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolveAI — Resolva qualquer atividade com uma foto</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2eb; --ink: #1a1410; --surface: #ffffff; --border: #e0d8cc;
+    --accent: #e85d2f; --accent2: #2563eb; --green: #16a34a;
+    --text: #1a1410; --muted: #8a7f72; --card: #faf8f4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Sora',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; opacity:0.03; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  nav { position:sticky; top:0; z-index:100; background:rgba(245,242,235,0.9); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:60px; }
+  .nav-logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.1rem; letter-spacing:-0.5px; }
+  .logo-icon { width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+  .nav-right { display:flex; align-items:center; gap:12px; }
+  .nav-badge { font-family:'Space Mono',monospace; font-size:0.65rem; background:var(--ink); color:var(--bg); padding:4px 10px; border-radius:20px; letter-spacing:1px; }
+  .hero { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:64px 32px 40px; text-align:center; }
+  .hero-chip { display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:white; font-size:0.72rem; font-weight:600; padding:6px 14px; border-radius:20px; margin-bottom:24px; letter-spacing:0.5px; animation:fadeUp 0.5s ease both; }
+  h1 { font-size:clamp(2.4rem,6vw,4rem); font-weight:800; letter-spacing:-2px; line-height:1.05; margin-bottom:16px; animation:fadeUp 0.5s 0.1s ease both; }
+  h1 .underline { position:relative; display:inline-block; }
+  h1 .underline::after { content:''; position:absolute; bottom:2px; left:0; right:0; height:6px; background:var(--accent); border-radius:3px; z-index:-1; opacity:0.3; }
+  .hero-sub { font-size:1rem; color:var(--muted); font-weight:400; max-width:500px; margin:0 auto 40px; line-height:1.7; animation:fadeUp 0.5s 0.2s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .app-card { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:0 32px 80px; animation:fadeUp 0.5s 0.3s ease both; }
+  .tabs { display:flex; gap:4px; background:var(--border); border-radius:12px; padding:4px; margin-bottom:20px; }
+  .tab { flex:1; background:none; border:none; font-family:'Sora',sans-serif; font-size:0.82rem; font-weight:600; padding:10px; border-radius:9px; cursor:pointer; color:var(--muted); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .tab.active { background:var(--surface); color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+  .upload-zone { border:2px dashed var(--border); border-radius:16px; padding:48px 24px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--card); position:relative; overflow:hidden; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:rgba(232,93,47,0.03); }
+  .upload-zone.has-image { padding:0; border-style:solid; border-color:var(--border); }
+  .upload-icon { width:64px; height:64px; background:var(--ink); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto 16px; }
+  .upload-title { font-size:1rem; font-weight:700; margin-bottom:6px; }
+  .upload-sub { font-size:0.8rem; color:var(--muted); }
+  .upload-btns { display:flex; gap:10px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+  .upload-btn { display:flex; align-items:center; gap:6px; background:var(--ink); color:var(--bg); border:none; font-family:'Sora',sans-serif; font-size:0.82rem; font-weight:600; padding:10px 20px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
+  .upload-btn:hover { background:var(--accent); }
+  .upload-btn.secondary { background:transparent; color:var(--ink); border:1.5px solid var(--border); }
+  .upload-btn.secondary:hover { border-color:var(--accent); color:var(--accent); background:transparent; }
+  #file-input, #camera-input { display:none; }
+  #preview-img { width:100%; max-height:400px; object-fit:contain; border-radius:14px; display:none; }
+  .preview-toolbar { display:none; align-items:center; justify-content:space-between; padding:12px 16px; border-top:1px solid var(--border); }
+  .preview-name { font-size:0.78rem; color:var(--muted); font-family:'Space Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
+  .remove-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'Sora',sans-serif; font-size:0.72rem; padding:4px 12px; border-radius:6px; cursor:pointer; transition:all 0.2s; }
+  .remove-btn:hover { border-color:#dc2626; color:#dc2626; }
+  .text-input-wrap { display:none; }
+  .text-input-wrap.visible { display:block; }
+  .problem-textarea { width:100%; min-height:160px; background:var(--card); border:2px solid var(--border); border-radius:16px; padding:20px; font-family:'Sora',sans-serif; font-size:0.9rem; color:var(--text); resize:vertical; outline:none; transition:border-color 0.2s; line-height:1.6; }
+  .problem-textarea:focus { border-color:var(--accent); }
+  .problem-textarea::placeholder { color:var(--muted); }
+  .options-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .select-group { display:flex; flex-direction:column; gap:6px; }
+  .select-label { font-size:0.72rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .custom-select { background:var(--card); border:1.5px solid var(--border); color:var(--text); font-family:'Sora',sans-serif; font-size:0.85rem; padding:10px 14px; border-radius:10px; outline:none; cursor:pointer; transition:border-color 0.2s; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a7f72' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+  .custom-select:focus { border-color:var(--accent); }
+  .custom-select option { background:var(--bg); }
+  .solve-btn { width:100%; background:var(--ink); color:var(--bg); border:none; font-family:'Sora',sans-serif; font-size:1rem; font-weight:700; padding:16px; border-radius:12px; cursor:pointer; margin-top:16px; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s; letter-spacing:-0.3px; }
+  .solve-btn:hover:not(:disabled) { background:var(--accent); transform:translateY(-1px); box-shadow:0 8px 24px rgba(232,93,47,0.3); }
+  .solve-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .btn-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite; display:none; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .result-area { margin-top:24px; display:none; animation:fadeUp 0.4s ease; }
+  .result-area.visible { display:block; }
+  .result-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .result-title { display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.9rem; }
+  .result-dot { width:8px; height:8px; background:var(--green); border-radius:50%; box-shadow:0 0 8px rgba(22,163,74,0.5); }
+  .result-actions { display:flex; gap:8px; }
+  .action-btn { background:none; border:1.5px solid var(--border); color:var(--muted); font-family:'Sora',sans-serif; font-size:0.72rem; font-weight:500; padding:6px 14px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
+  .action-btn:hover { border-color:var(--ink); color:var(--ink); }
+  .result-box { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; overflow:hidden; }
+  .result-subject-bar { display:flex; align-items:center; gap:10px; padding:12px 20px; background:var(--card); border-bottom:1px solid var(--border); font-size:0.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .subject-chip { background:var(--ink); color:var(--bg); font-size:0.65rem; padding:2px 10px; border-radius:20px; letter-spacing:0.5px; }
+  .result-content { padding:24px; font-size:0.92rem; line-height:1.8; color:var(--text); white-space:pre-wrap; font-family:'Sora',sans-serif; }
+  .features { max-width:860px; margin:0 auto; padding:0 32px 60px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; position:relative; z-index:1; }
+  .feat-card { background:var(--surface); border:1.5px solid var(--border); border-radius:14px; padding:20px; transition:all 0.2s; }
+  .feat-card:hover { transform:translateY(-2px); border-color:var(--accent); }
+  .feat-icon { font-size:1.5rem; margin-bottom:10px; }
+  .feat-title { font-weight:700; font-size:0.88rem; margin-bottom:4px; }
+  .feat-desc { font-size:0.75rem; color:var(--muted); line-height:1.5; }
+  .history-section { max-width:860px; margin:0 auto; padding:0 32px 60px; position:relative; z-index:1; display:none; }
+  .history-section.has-items { display:block; }
+  .section-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+  .history-list { display:flex; flex-direction:column; gap:8px; }
+  .history-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:all 0.15s; }
+  .history-item:hover { border-color:var(--accent); transform:translateX(3px); }
+  .history-thumb { width:44px; height:44px; border-radius:8px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; overflow:hidden; }
+  .history-thumb img { width:100%; height:100%; object-fit:cover; }
+  .history-info { flex:1; overflow:hidden; }
+  .history-q { font-size:0.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .history-meta { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+  .history-subject { font-size:0.65rem; font-weight:600; padding:2px 8px; border-radius:4px; background:var(--card); border:1px solid var(--border); color:var(--muted); white-space:nowrap; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(26,20,16,0.6); backdrop-filter:blur(4px); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.hidden { display:none; }
+  .modal-box { background:var(--surface); border:1.5px solid var(--border); border-radius:20px; padding:40px; max-width:440px; width:100%; animation:fadeUp 0.3s ease; }
+  .modal-icon { font-size:2.5rem; margin-bottom:16px; }
+  .modal-title { font-size:1.3rem; font-weight:800; margin-bottom:6px; letter-spacing:-0.5px; }
+  .modal-sub { font-size:0.82rem; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+  .api-input { width:100%; background:var(--card); border:1.5px solid var(--border); color:var(--text); font-family:'Space Mono',monospace; font-size:0.82rem; padding:12px 16px; border-radius:10px; outline:none; margin-bottom:12px; transition:border-color 0.2s; }
+  .api-input:focus { border-color:var(--accent); }
+  .api-hint { font-size:0.72rem; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+  .api-hint a { color:var(--accent2); text-decoration:none; }
+  .modal-btn { width:100%; background:var(--ink); color:var(--bg); border:none; font-family:'Sora',sans-serif; font-size:0.9rem; font-weight:700; padding:14px; border-radius:10px; cursor:pointer; transition:all 0.2s; }
+  .modal-btn:hover { background:var(--accent); }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:var(--ink); color:var(--bg); font-size:0.82rem; font-weight:500; padding:12px 24px; border-radius:20px; z-index:300; opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  @media(max-width:600px) { .options-row{grid-template-columns:1fr} .features{grid-template-columns:1fr} h1{font-size:2rem} }
+</style>
+</head>
+<body>
+
+<!-- MODAL API KEY -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal-box">
+    <div class="modal-icon">🔑</div>
+    <div class="modal-title">Chave da API</div>
+    <div class="modal-sub">Para usar o SolveAI você precisa de uma chave da API da Anthropic (Claude). É gratuita para começar!</div>
+    <input class="api-input" id="api-key-input" type="password" placeholder="sk-ant-...">
+    <div class="api-hint">Obtenha sua chave gratuita em <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.<br>Sua chave fica salva apenas no seu navegador.</div>
+    <button class="modal-btn" onclick="saveApiKey()">Salvar e Continuar →</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon">🧠</div>
+    SolveAI
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">POWERED BY CLAUDE</div>
+    <button onclick="document.getElementById('api-modal').classList.remove('hidden')" style="background:none;border:1.5px solid var(--border);color:var(--muted);font-family:'Sora',sans-serif;font-size:0.75rem;padding:6px 14px;border-radius:8px;cursor:pointer;">⚙ API</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-chip">✨ IA que resolve qualquer questão</div>
+  <h1>Tire uma foto,<br><span class="underline">receba a solução</span></h1>
+  <p class="hero-sub">Matemática, física, química, português e muito mais. Resolução passo a passo com explicações detalhadas.</p>
+</section>
+
+<!-- APP -->
+<div class="app-card">
+  <div class="tabs">
+    <button class="tab active" id="tab-photo" onclick="switchTab('photo')">📷 Foto / Imagem</button>
+    <button class="tab" id="tab-text" onclick="switchTab('text')">⌨️ Digitar questão</button>
+    <button class="tab" id="tab-camera" onclick="openCamera()">📸 Câmera ao vivo</button>
+  </div>
+
+  <div class="upload-zone" id="upload-zone"
+    onclick="document.getElementById('file-input').click()"
+    ondragover="handleDragOver(event)"
+    ondragleave="handleDragLeave(event)"
+    ondrop="handleDrop(event)">
+    <div id="upload-placeholder">
+      <div class="upload-icon">📚</div>
+      <div class="upload-title">Arraste a foto da questão aqui</div>
+      <div class="upload-sub">PNG, JPG, JPEG, WEBP · até 10MB</div>
+      <div class="upload-btns" onclick="event.stopPropagation()">
+        <button class="upload-btn" onclick="document.getElementById('file-input').click()">📁 Escolher arquivo</button>
+        <button class="upload-btn secondary" onclick="document.getElementById('camera-input').click()">📷 Usar câmera</button>
+      </div>
+    </div>
+    <img id="preview-img" alt="preview">
+    <div class="preview-toolbar" id="preview-toolbar">
+      <span class="preview-name" id="preview-name">imagem.jpg</span>
+      <button class="remove-btn" onclick="removeImage(event)">✕ Remover</button>
+    </div>
+  </div>
+
+  <div class="text-input-wrap" id="text-mode">
+    <textarea class="problem-textarea" id="problem-text" placeholder="Digite ou cole a questão aqui...&#10;&#10;Exemplo: Calcule a integral de x² + 3x - 2 dx&#10;&#10;Pode ser qualquer tipo de problema: matemática, física, química, português, história..."></textarea>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
+  <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+
+  <div class="options-row">
+    <div class="select-group">
+      <span class="select-label">Matéria</span>
+      <select class="custom-select" id="subject-select">
+        <option value="auto">🤖 Detectar automaticamente</option>
+        <option value="matematica">📐 Matemática</option>
+        <option value="fisica">⚛️ Física</option>
+        <option value="quimica">🧪 Química</option>
+        <option value="portugues">📝 Português / Redação</option>
+        <option value="historia">🏛️ História</option>
+        <option value="geografia">🌎 Geografia</option>
+        <option value="biologia">🧬 Biologia</option>
+        <option value="ingles">🇺🇸 Inglês</option>
+        <option value="programacao">💻 Programação</option>
+      </select>
+    </div>
+    <div class="select-group">
+      <span class="select-label">Nível</span>
+      <select class="custom-select" id="level-select">
+        <option value="fundamental">📚 Ensino Fundamental</option>
+        <option value="medio" selected>🎓 Ensino Médio</option>
+        <option value="superior">🏫 Ensino Superior</option>
+        <option value="concurso">🏆 Concurso / ENEM</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="solve-btn" id="solve-btn" onclick="solveQuestion()">
+    <div class="btn-spinner" id="btn-spinner"></div>
+    <span id="btn-text">🧠 Resolver questão</span>
+  </button>
+
+  <div class="result-area" id="result-area">
+    <div class="result-header">
+      <div class="result-title"><div class="result-dot"></div>Resolução completa</div>
+      <div class="result-actions">
+        <button class="action-btn" onclick="copyResult()">📋 Copiar</button>
+        <button class="action-btn" onclick="clearResult()">✕ Limpar</button>
+      </div>
+    </div>
+    <div class="result-box">
+      <div class="result-subject-bar">
+        <span>Matéria:</span>
+        <span class="subject-chip" id="result-subject">—</span>
+        <span style="margin-left:auto;font-family:'Space Mono',monospace;font-size:0.65rem" id="result-time"></span>
+      </div>
+      <div class="result-content" id="result-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features">
+  <div class="feat-card"><div class="feat-icon">📷</div><div class="feat-title">Foto ou câmera</div><div class="feat-desc">Tire uma foto da questão ou faça upload. Reconhece texto manuscrito e impresso.</div></div>
+  <div class="feat-card"><div class="feat-icon">🔢</div><div class="feat-title">Passo a passo</div><div class="feat-desc">Não só a resposta — explicações detalhadas de cada etapa para você realmente aprender.</div></div>
+  <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Todas as matérias</div><div class="feat-desc">Matemática, física, química, português, história, geografia, biologia, inglês e programação.</div></div>
+</div>
+
+<!-- HISTÓRICO -->
+<div class="history-section" id="history-section">
+  <div class="section-label">Histórico recente</div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let apiKey = localStorage.getItem('solveai_key') || '';
+  let currentImage = null;
+  let currentMode = 'photo';
+  let history = JSON.parse(localStorage.getItem('solveai_history') || '[]');
+  let resultText = '';
+
+  if (!apiKey) { document.getElementById('api-modal').classList.remove('hidden'); }
+  else { document.getElementById('api-modal').classList.add('hidden'); }
+  renderHistory();
+
+  function saveApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-')) return showToast('Chave inválida. Deve começar com sk-');
+    apiKey = key;
+    localStorage.setItem('solveai_key', key);
+    document.getElementById('api-modal').classList.add('hidden');
+    showToast('Chave salva com sucesso!');
+  }
+
+  function switchTab(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + mode).classList.add('active');
+    const uploadZone = document.getElementById('upload-zone');
+    const textMode = document.getElementById('text-mode');
+    if (mode === 'photo') { uploadZone.style.display = 'block'; textMode.classList.remove('visible'); }
+    else if (mode === 'text') { uploadZone.style.display = 'none'; textMode.classList.add('visible'); }
+  }
+
+  function openCamera() {
+    document.getElementById('camera-input').click();
+    currentMode = 'photo';
+    document.getElementById('upload-zone').style.display = 'block';
+    document.getElementById('text-mode').classList.remove('visible');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-photo').classList.add('active');
+  }
+
+  function handleFileSelect(event) { const file = event.target.files[0]; if (!file) return; loadImage(file); }
+  function handleDragOver(event) { event.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+  function handleDragLeave(event) { document.getElementById('upload-zone').classList.remove('drag-over'); }
+  function handleDrop(event) { event.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over'); const file = event.dataTransfer.files[0]; if (file && file.type.startsWith('image/')) loadImage(file); }
+
+  function loadImage(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      currentImage = { data: e.target.result.split(',')[1], type: file.type, name: file.name };
+      const img = document.getElementById('preview-img');
+      img.src = e.target.result; img.style.display = 'block';
+      document.getElementById('upload-placeholder').style.display = 'none';
+      document.getElementById('preview-toolbar').style.display = 'flex';
+      document.getElementById('preview-name').textContent = file.name;
+      document.getElementById('upload-zone').classList.add('has-image');
+      document.getElementById('upload-zone').onclick = null;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage(event) {
+    event.stopPropagation(); currentImage = null;
+    document.getElementById('preview-img').style.display = 'none';
+    document.getElementById('preview-img').src = '';
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('preview-toolbar').style.display = 'none';
+    document.getElementById('upload-zone').classList.remove('has-image');
+    document.getElementById('upload-zone').onclick = () => document.getElementById('file-input').click();
+    document.getElementById('file-input').value = '';
+    document.getElementById('camera-input').value = '';
+  }
+
+  async function solveQuestion() {
+    if (!apiKey) { document.getElementById('api-modal').classList.remove('hidden'); return; }
+    const subject = document.getElementById('subject-select').value;
+    const level = document.getElementById('level-select').value;
+    const textProblem = document.getElementById('problem-text').value.trim();
+    if (currentMode === 'photo' && !currentImage) return showToast('Adicione uma imagem primeiro.');
+    if (currentMode === 'text' && !textProblem) return showToast('Digite a questão primeiro.');
+    setLoading(true);
+    document.getElementById('result-area').classList.remove('visible');
+    const subjectMap = { auto:'Detectar automaticamente', matematica:'Matemática', fisica:'Física', quimica:'Química', portugues:'Português', historia:'História', geografia:'Geografia', biologia:'Biologia', ingles:'Inglês', programacao:'Programação' };
+    const levelMap = { fundamental:'Ensino Fundamental', medio:'Ensino Médio', superior:'Ensino Superior', concurso:'Concurso/ENEM' };
+    const systemPrompt = `Você é o SolveAI, um assistente educacional brasileiro especialista em resolver questões escolares e universitárias.
+Seu objetivo é:
+1. Identificar a matéria da questão
+2. Resolver completamente passo a passo
+3. Dar uma explicação clara de cada etapa
+4. Apresentar a resposta final de forma destacada
+
+Formato da resposta:
+📚 MATÉRIA: [nome]
+📊 NÍVEL: [nível]
+
+📋 ENTENDENDO A QUESTÃO:
+[Explique o que está sendo pedido]
+
+🔢 RESOLUÇÃO PASSO A PASSO:
+Passo 1: [título]
+[explicação]
+Passo 2: [título]
+[explicação]
+
+✅ RESPOSTA FINAL:
+[resposta clara]
+
+💡 DICA:
+[dica importante]
+
+Nível: ${levelMap[level]} | Matéria: ${subjectMap[subject]}
+Responda sempre em português brasileiro. Seja claro e didático.`;
+    try {
+      const messages = [];
+      if (currentImage) {
+        messages.push({ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:currentImage.type, data:currentImage.data }},{ type:'text', text:'Resolva a questão que aparece nesta imagem.' + (textProblem ? ' Contexto: ' + textProblem : '') }]});
+      } else {
+        messages.push({ role:'user', content: textProblem });
+      }
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01' },
+        body: JSON.stringify({ model:'claude-opus-4-5', max_tokens:2000, system:systemPrompt, messages })
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || 'Erro na API'); }
+      const data = await res.json();
+      resultText = data.content[0].text;
+      const now = new Date();
+      document.getElementById('result-subject').textContent = subjectMap[subject] || 'Detectado';
+      document.getElementById('result-time').textContent = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('result-content').textContent = resultText;
+      document.getElementById('result-area').classList.add('visible');
+      document.getElementById('result-area').scrollIntoView({ behavior:'smooth', block:'start' });
+      saveToHistory(textProblem || 'Questão por imagem', resultText, subject, subjectMap);
+    } catch(err) {
+      showToast('Erro: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function setLoading(state) {
+    const btn = document.getElementById('solve-btn');
+    document.getElementById('btn-spinner').style.display = state ? 'block' : 'none';
+    document.getElementById('btn-text').textContent = state ? 'Resolvendo...' : '🧠 Resolver questão';
+    btn.disabled = state;
+  }
+
+  function saveToHistory(question, answer, subject, subjectMap) {
+    const item = { id:Date.now(), question:question.substring(0,80), answer, subject:subjectMap[subject]||'Auto', time:new Date().toLocaleString('pt-BR'), hasImage:!!currentImage, thumb:currentImage?'data:'+currentImage.type+';base64,'+currentImage.data:null };
+    history.unshift(item);
+    if (history.length > 10) history = history.slice(0,10);
+    localStorage.setItem('solveai_history', JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const section = document.getElementById('history-section');
+    const list = document.getElementById('history-list');
+    if (!history.length) { section.classList.remove('has-items'); return; }
+    section.classList.add('has-items');
+    list.innerHTML = history.map(item => `
+      <div class="history-item" onclick="showHistoryItem(${item.id})">
+        <div class="history-thumb">${item.thumb ? `<img src="${item.thumb}" alt="">` : (item.hasImage ? '🖼️' : '📝')}</div>
+        <div class="history-info"><div class="history-q">${item.question||'Questão por imagem'}</div><div class="history-meta">${item.time}</div></div>
+        <span class="history-subject">${item.subject}</span>
+      </div>`).join('');
+  }
+
+  function showHistoryItem(id) {
+    const item = history.find(h => h.id === id); if (!item) return;
+    resultText = item.answer;
+    document.getElementById('result-subject').textContent = item.subject;
+    document.getElementById('result-time').textContent = item.time;
+    document.getElementById('result-content').textContent = item.answer;
+    document.getElementById('result-area').classList.add('visible');
+    document.getElementById('result-area').scrollIntoView({ behavior:'smooth' });
+  }
+
+  function copyResult() { navigator.clipboard.writeText(resultText).then(()=>showToast('Copiado!')).catch(()=>showToast('Erro ao copiar')); }
+  function clearResult() { document.getElementById('result-area').classList.remove('visible'); resultText = ''; }
+  function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+
+  document.getElementById('problem-text').addEventListener('keydown', e => { if(e.key==='Enter'&&e.ctrlKey) solveQuestion(); });
+</script>
+</body>
+</html>
